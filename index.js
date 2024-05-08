@@ -70,6 +70,16 @@ res.send({success:true})
 
 })
 
+ // clear cookes 
+ app.post('/jwt/logout', async (req, res) => {
+  const userEmail = req.body;
+  res.clearCookie('token', {
+    maxAge: 0
+  })
+
+  res.send({ success: true })
+});
+
 
     // product related api 
 
@@ -78,10 +88,13 @@ res.send({success:true})
       const item = parseInt(req.query.item)
       const page = parseInt(req.query.page)
       console.log(req.userInfo.email);
+      
       const skip = item * page;
       const result = await productCollection.find().skip(skip).limit(item).toArray();
       res.send(result);
     })
+
+
     app.get('/productsCount', async (req, res) => {
 
 
