@@ -64,7 +64,11 @@ async function run() {
 app.post('/jwt',async(req,res)=>{
 const userEmail = req.body
 const token = jwt.sign(userEmail, process.env.ACCESS_TOKEN, { expiresIn: '1h' });
-res.cookie('token',token)
+res.cookie('token',token,{
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production"?true:false,
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+})
 
 res.send({success:true})
 
@@ -74,7 +78,10 @@ res.send({success:true})
  app.post('/jwt/logout', async (req, res) => {
   const userEmail = req.body;
   res.clearCookie('token', {
-    maxAge: 0
+    maxAge: 0,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production"?true:false,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
   })
 
   res.send({ success: true })
@@ -84,20 +91,32 @@ res.send({success:true})
     // product related api 
 
    
-    app.get('/products',verifyToken, async (req, res) => {
+    app.get('/products', async (req, res) => {
       const item = parseInt(req.query.item)
       const page = parseInt(req.query.page)
-      console.log(req.userInfo.email);
+      // console.log(req.userInfo.email);
       
       const skip = item * page;
       const result = await productCollection.find().skip(skip).limit(item).toArray();
       res.send(result);
     })
 
+    app.post('/productById',verifyToken,async(req,res)=>{
+      const data = req.body
+      const ids = Object.keys(data)
+      const id =ids.map(id => new ObjectId(id));
+      const query = { _id: { $in: id } };
+    
+      
+      const result = await productCollection.find(query).toArray();
+      
+      res.send(result);
+      
+    })
+
+    
 
     app.get('/productsCount', async (req, res) => {
-
-
       const totalProducts = await productCollection.estimatedDocumentCount();
       res.send({ totalProducts });
     })
